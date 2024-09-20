@@ -89,12 +89,6 @@ def control_eyes():
 
 @__app.route('/api/get-data', methods=['post'])
 def api_get_data():
-    config_data = config_util.config
-    if  wsa_server.new_instance().isConnect:
-        config_data['interact']['playSound'] = False
-    else:
-        config_data['interact']['playSound'] = True
-    config_util.save_config(config_data)
     voice_list = tts_voice.get_voice_list()
     send_voice_list = []
     if config_util.tts_module == 'ali':
