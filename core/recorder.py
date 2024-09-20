@@ -261,7 +261,6 @@ class Recorder:
 
     def stop(self):
         self.__running = False
-        self.__aLiNls.end()
 
     @abstractmethod
     def on_speaking(self, text):

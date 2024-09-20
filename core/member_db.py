@@ -87,9 +87,12 @@ class Member_Db:
         conn = sqlite3.connect('user_profiles.db')
         c = conn.cursor()
         c.execute('SELECT * FROM T_Member WHERE username = ?', (username,))
-        result = c.fetchone()[0]
+        result = c.fetchone()
         conn.close()
-        return result
+        if result is None:
+            return 0
+        else:
+           return result[0]
 
     @synchronized
     def query(self, sql):
