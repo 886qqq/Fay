@@ -358,16 +358,16 @@ class FeiFei:
         for key, value in fay_booter.DeviceInputListenerDict.items():
             if value.username == interact.data.get("user") and value.isOutput: #按username选择推送，booter.devicelistenerdice按用户名记录
                 try:
-                    interact.data["socket"].send(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08") # 发送音频开始标志，同时也检查设备是否在线
+                    value.deviceConnector.send(b"\x00\x01\x02\x03\x04\x05\x06\x07\x08") # 发送音频开始标志，同时也检查设备是否在线
                     wavfile = open(os.path.abspath(file_url), "rb")
                     data = wavfile.read(102400)
                     total = 0
                     while data:
                         total += len(data)
-                        interact.data["socket"].send(data)
+                        value.deviceConnector.send(data)
                         data = wavfile.read(102400)
                         time.sleep(0.0001)
-                    interact.data["socket"].send(b'\x08\x07\x06\x05\x04\x03\x02\x01\x00')# 发送音频结束标志
+                    value.deviceConnector.send(b'\x08\x07\x06\x05\x04\x03\x02\x01\x00')# 发送音频结束标志
                     util.log(1, "远程音频发送完成：{}".format(total))
                 except socket.error as serr:
                     util.log(1,"远程音频输入输出设备已经断开：{}".format(key)) 
