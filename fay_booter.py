@@ -165,7 +165,7 @@ def device_socket_keep_alive():
                 value.deviceConnector.send(b'\xf0\xf1\xf2\xf3\xf4\xf5\xf6\xf7\xf8')#发送心跳包
                 wsa_server.get_web_instance().add_cmd({"remote_audio_connect": True, "Username" : value.username}) 
             except Exception as serr:
-                util.log(1,"远程音频输入输出设备已经断开：{}".format(key))
+                util.printInfo(3, value.username, "远程音频输入输出设备已经断开：{}".format(key))
                 value.stop()
                 delkey = key
                 break
@@ -196,7 +196,7 @@ def accept_audio_device_output_connect():
             #把DeviceInputListenner对象记录下来
             peername = str(deviceConnector.getpeername()[0]) + ":" + str(deviceConnector.getpeername()[1])
             DeviceInputListenerDict[peername] = deviceInputListener
-            util.log(1,"远程音频输入输出设备连接上：{}".format(addr))
+            util.log(3,"远程音频输入输出设备连接上：{}".format(addr))
         except Exception as e:
             pass
 
@@ -220,7 +220,12 @@ def kill_process_by_port(port):
 def console_listener():
     global feiFei
     while __running:
-        text = input()
+        try:
+            text = input()
+        except EOFError:
+            util.log(1, "控制台已经关闭")
+            break
+        
         args = text.split(' ')
 
         if len(args) == 0 or len(args[0]) == 0:
@@ -254,7 +259,7 @@ def console_listener():
         elif args[0]=='exit':
             stop()
             time.sleep(0.1)
-            util.log(1,'程序正在退出..')
+            util.log(3,'程序正在退出..')
             ports =[10001,10002,10003,5000]
             for port in ports:
                 kill_process_by_port(port)
@@ -270,23 +275,23 @@ def stop():
     global DeviceInputListenerDict
     global ngrok
 
-    util.log(1, '正在关闭服务...')
+    util.log(3, '正在关闭服务...')
     __running = False
     if recorderListener is not None:
-        util.log(1, '正在关闭录音服务...')
+        util.log(3, '正在关闭录音服务...')
         recorderListener.stop()
-    util.log(1, '正在关闭远程音频输入输出服务...')
+    util.log(3, '正在关闭远程音频输入输出服务...')
     if len(DeviceInputListenerDict) > 0:
         for key in list(DeviceInputListenerDict.keys()):
             value = DeviceInputListenerDict.pop(key)
             value.stop()
     deviceSocketServer.close()
     if config_util.key_ngrok_cc_id and config_util.key_ngrok_cc_id is not None and config_util.key_ngrok_cc_id.strip() != "":
-        util.log(1, '正在关闭穿透服务...')
+        util.log(3, '正在关闭穿透服务...')
         ngrok.stop()
-    util.log(1, '正在关闭核心服务...')
+    util.log(3, '正在关闭核心服务...')
     feiFei.stop()
-    util.log(1, '服务已关闭！')
+    util.log(3, '服务已关闭！')
 
 
 #开启服务
@@ -294,48 +299,48 @@ def start():
     global feiFei
     global recorderListener
     global __running
-    util.log(1, '开启服务...')
+    util.log(3, '开启服务...')
     __running = True
 
     #读取配置
-    util.log(1, '读取配置...')
+    util.log(3, '读取配置...')
     config_util.load_config()
 
     #开启核心服务
-    util.log(1, '开启核心服务...')
+    util.log(3, '开启核心服务...')
     feiFei = FeiFei()
     feiFei.start()
 
     #加载本地知识库
     if config_util.key_chat_module == 'langchain':
-        from ai_module import nlp_langchain
+        from llm import nlp_langchain
         nlp_langchain.save_all()
     if config_util.key_chat_module == 'privategpt':    
-        from ai_module import nlp_privategpt
+        from llm import nlp_privategpt
         nlp_privategpt.save_all()
 
     #开启录音服务
     record = config_util.config['source']['record']
     if record['enabled']:
-        util.log(1, '开启录音服务...')
+        util.log(3, '开启录音服务...')
         recorderListener = RecorderListener(record['device'], feiFei)  # 监听麦克风
         recorderListener.start()
 
     #启动远程音频连接服务
-    util.log(1,'启动远程音频连接服务...')
+    util.log(3,'启动远程音频连接服务...')
     deviceSocketThread = MyThread(target=accept_audio_device_output_connect)
     deviceSocketThread.start()
 
     #开启穿透服务
     if config_util.key_ngrok_cc_id and config_util.key_ngrok_cc_id is not None and config_util.key_ngrok_cc_id.strip() != "":
-            util.log(1, "开启穿透服务...")
+            util.log(3, "开启穿透服务...")
             MyThread(target=start_ngrok, args=[config_util.key_ngrok_cc_id]).start()
             
     #监听控制台
-    util.log(1, '注册命令...')
+    util.log(3, '注册命令...')
     MyThread(target=console_listener).start()  # 监听控制台
 
-    util.log(1, '完成!')
+    util.log(3, '完成!')
     util.log(1, '使用 \'help\' 获取帮助.')
 
     

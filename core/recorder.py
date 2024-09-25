@@ -5,8 +5,8 @@ import time
 import threading
 from abc import abstractmethod
 
-from ai_module.ali_nls import ALiNls
-from ai_module.funasr import FunASR
+from asr.ali_nls import ALiNls
+from asr.funasr import FunASR
 from core import wsa_server
 from scheduler.thread_manager import MyThread
 from utils import util
@@ -91,7 +91,7 @@ class Recorder:
         while not iat.done and time.time() - t < 1:
             time.sleep(0.01)
         text = iat.finalResults
-        util.log(1, "语音处理完成！ 耗时: {} ms".format(math.floor((time.time() - tm) * 1000)))
+        util.printInfo(1, self.username, "语音处理完成！ 耗时: {} ms".format(math.floor((time.time() - tm) * 1000)))
         if len(text) > 0:
             if cfg.config['source']['wake_word_enabled']:
                 #普通唤醒模式
@@ -107,12 +107,12 @@ class Recorder:
                                     wake_up = True
                         if wake_up:
                             self.wakeup_matched = True  # 唤醒成功
-                            util.log(1, "唤醒成功！")
+                            util.printInfo(3, self.username, "唤醒成功！")
                             self.on_speaking(text)
                             self.processing = False
                             self.timer.cancel()  # 取消之前的计时器任务
                         else:
-                            util.log(1, "[!] 待唤醒！")
+                            util.printInfo(3, self.username, "[!] 待唤醒！")
                             wsa_server.get_web_instance().add_cmd({"panelMsg": "", "Username" : self.username})
                     else:
                         self.on_speaking(text)
@@ -132,13 +132,13 @@ class Recorder:
                             wake_up = True
                             break
                     if wake_up:
-                        util.log(1, "唤醒成功！")
+                        util.printInfo(3, self.username, "唤醒成功！")
                         #去除唤醒词后语句
                         question = text[len(wake_up_word):].lstrip()
                         self.on_speaking(question)
                         self.processing = False
                     else:
-                        util.log(1, "[!] 待唤醒！")
+                        util.printInfo(3, self.username, "[!] 待唤醒！")
                         wsa_server.get_web_instance().add_cmd({"panelMsg": "", 'Username' : self.username})
 
             #非唤醒模式
@@ -148,7 +148,7 @@ class Recorder:
         else:
             if self.wakeup_matched:
                 self.wakeup_matched = False
-            util.log(1, "[!] 语音未检测到内容！")
+            util.printInfo(1, self.username, "[!] 语音未检测到内容！")
             self.processing = False
             self.dynamic_threshold = self.__get_history_percentage(30)
             wsa_server.get_web_instance().add_cmd({"panelMsg": "", 'Username' : self.username})
@@ -161,7 +161,7 @@ class Recorder:
             stream = self.get_stream() #此方法会阻塞
         except Exception as e:
                 print(e)
-                util.log(1, "请检查设备是否有误，再重新启动!")
+                util.printInfo(1, self.username, "请检查设备是否有误，再重新启动!")
                 return
         isSpeaking = False
         last_mute_time = time.time()
@@ -221,14 +221,14 @@ class Recorder:
                 last_speaking_time = time.time()
                 if not self.__processing and not isSpeaking and time.time() - last_mute_time > _ATTACK:
                     isSpeaking = True  #用户正在说话
-                    util.log(3, "聆听中...")
+                    util.printInfo(3, self.username,"聆听中...")
                     concatenated_audio.clear()
                     self.__aLiNls = self.asrclient()
                     try:
                         self.__aLiNls.start()
                     except Exception as e:
                         print(e)
-                        util.log(3, "aliyun asr 连接受限")
+                        util.printInfo(1, self.username, "aliyun asr 连接受限")
                     for i in range(len(self.__history_data) - 1): #当前data在下面会做发送，这里是发送激活前的音频数据，以免漏掉信息
                         buf = self.__history_data[i]
                         if self.ASRMode == "ali":
@@ -241,7 +241,7 @@ class Recorder:
                 if isSpeaking:
                     if time.time() - last_speaking_time > _RELEASE:
                         isSpeaking = False
-                        util.log(1, "语音处理中...")
+                        util.printInfo(1, self.username, "语音处理中...")
                         self.__aLiNls.end()
                         self.__fay.last_quest_time = time.time()
                         self.__waitingResult(self.__aLiNls, concatenated_audio)

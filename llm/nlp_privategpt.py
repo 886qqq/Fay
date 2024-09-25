@@ -5,8 +5,8 @@ from pgpt_python.client import PrivateGPTApi
 client = PrivateGPTApi(base_url="http://127.0.0.1:8001")
 
 index_name = "knowledge_data"
-folder_path = "ai_module/privategpt/knowledge_base"
-local_persist_path = "ai_module/privategpt"
+folder_path = "llm/privategpt/knowledge_base"
+local_persist_path = "llm/privategpt"
 md5_file_path = os.path.join(local_persist_path, "pdf_md5.txt")
 
 def generate_file_md5(file_path):

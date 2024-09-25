@@ -9,7 +9,7 @@
 
 
 
-助理版是Fay 数字人框架最常用的版本。它提供了灵活的模块化设计，使开发人员能够定制和组合各种功能模块，包括情绪分析、NLP处理、语音合成和语音输出等。助理版构建的是一问（远程或本地，移动或PC，语音或文字）一答（数字人或机器，移动或PC，语音或文字或RPA）的标准模式。
+助理版是Fay 数字人框架最常用的版本。它提供了灵活的模块化设计，使开发人员能够定制和组合各种功能模块，包括情绪分析、NLP处理、语音合成和语音输出等。助理版构建的是一问（远程或本地，移动或PC，语音或文字）一答（数字人或机器，移动或PC，语音或文字或RPA）的标准模式。<span style="color:red;">助理版提供了更完善的接口，可以方便您把自己的产品接入数字人</span>
 
 
 
@@ -30,7 +30,7 @@ https://github.com/TheRamU/Fay/blob/main/WebSocket.md)
 
 
 ### **环境** 
-- Python 3.9、3.10
+- Python 3.9、3.10、3.11、3.12
 - Windows、macos、linux
 
 ### **安装依赖**
@@ -63,28 +63,19 @@ run
 docker run -it --rm -p 5000:5000 -p 10001:10001 -p 10002:10002 -p 10003:10003 fay
 ```
 ### **启动数字人（非必须）**
-启动数字人[xszyou/fay-ue5: 可对接fay数字人的ue5工程 (github.com)](https://github.com/xszyou/fay-ue5)
 
+ue: https://github.com/xszyou/fay-ue5
+
+xuniren（2d）：https://qqk9ntwbcit.feishu.cn/wiki/BYn0w7OTKikGGqkRXoLche6Rnob
+
+unity：https://qqk9ntwbcit.feishu.cn/wiki/Se9xw04hUiss00kb2Lmci1BVnM9
+
+metahuman-stream：https://qqk9ntwbcit.feishu.cn/wiki/Ik1kwO9X5iilnGkFwRhcnmtvn3e
+
+duix（android、ios)：https://qqk9ntwbcit.feishu.cn/wiki/Ik1kwO9X5iilnGkFwRhcnmtvn3e
 
 ### **启动android 连接器（非必须）**
 代码地址：https://github.com/xszyou/fay-android
-
-
-## **使用说明**
-
-
-### **使用说明**
-
-+ 语音助理：Fay（麦克风输入源开启）；
-+ 远程语音助理：Fay + 远程设备接入；
-+ 数字人互动：Fay（麦克风输入源开启、填写性格Q&A）+ 数字人；
-
-
-### **语音指令**
-
-| 关闭核心                  | 静音                       | 取消静音                                                         |
-| ------------------------- | -------------------------- | ------------------------------------------------------------ |
-| 关闭、再见、你走吧   | 静音、闭嘴、我想静静        |   取消静音、你在哪呢、你可以说话了                            |
 
 
 

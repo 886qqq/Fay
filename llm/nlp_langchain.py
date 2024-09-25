@@ -11,8 +11,8 @@ from utils import config_util as cfg
 from utils import util
 
 index_name = "knowledge_data"
-folder_path = "ai_module/langchain/knowledge_base"  
-local_persist_path = "ai_module/langchain"
+folder_path = "llm/langchain/knowledge_base"  
+local_persist_path = "llm/langchain"
 md5_file_path = os.path.join(local_persist_path, "pdf_md5.txt")
 
 def generate_file_md5(file_path):

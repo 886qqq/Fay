@@ -51,14 +51,14 @@ class FunASR:
     # 收到websocket错误的处理
     def on_close(self, ws, code, msg):
         self.__connected = False
-        util.log(1, f"### CLOSE:{msg}")
+        util.printInfo(1, self.username, f"### CLOSE:{msg}")
         self.__ws = None
         self.__attempt_reconnect()
 
     # 收到websocket错误的处理
     def on_error(self, ws, error):
         self.__connected = False
-        util.log(1, f"### error:{error}")
+        util.printInfo(1, self.username, f"### error:{error}")
         self.__ws = None
         self.__attempt_reconnect()
 
@@ -66,7 +66,7 @@ class FunASR:
     def __attempt_reconnect(self):
         if not self.__reconnecting:
             self.__reconnecting = True
-            util.log(1, "尝试重连funasr...")
+            util.log(3, "尝试重连funasr...")
             while not self.__connected:
                 time.sleep(self.__reconnect_delay)
                 self.start()

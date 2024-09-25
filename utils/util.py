@@ -29,10 +29,14 @@ def __write_to_file(text):
 def printInfo(level, sender, text, send_time=-1):
     if send_time < 0:
         send_time = time.time()
-    format_time = time.strftime('%H:%M:%S', time.localtime(send_time))
+    format_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(send_time)) + f".{int(send_time % 1 * 10)}"
     logStr = '[{}][{}] {}'.format(format_time, sender, text)
     print(logStr)
     if level >= 3:
+        wsa_server.get_web_instance().add_cmd({"panelMsg": text} if sender == "系统" else {"panelMsg": text, "Username" : sender})
+        if wsa_server.get_instance().isConnect: # 数字人已经连接
+            content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': text}} if sender == "系统" else  {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': text}, "Username" : sender}
+            wsa_server.get_instance().add_cmd(content)
         MyThread(target=__write_to_file, args=[logStr]).start()
 
 

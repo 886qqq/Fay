@@ -2,8 +2,8 @@ import time
 
 import azure.cognitiveservices.speech as speechsdk
 import asyncio
-from core import tts_voice
-from core.tts_voice import EnumVoice
+from tts import tts_voice
+from tts.tts_voice import EnumVoice
 from utils import util, config_util
 from utils import config_util as cfg
 import pygame

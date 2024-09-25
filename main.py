@@ -4,7 +4,7 @@ os.environ['PATH'] += os.pathsep + os.path.join(os.getcwd(), "test", "ovr_lipsyn
 import sys
 import time
 from utils import config_util
-from ai_module import ali_nls
+from asr import ali_nls
 from core import wsa_server
 from gui import flask_server
 from gui.window import MainWindow

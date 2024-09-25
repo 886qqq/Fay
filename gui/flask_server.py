@@ -8,7 +8,7 @@ from flask_cors import CORS
 
 import fay_booter
 
-from core import tts_voice
+from tts import tts_voice
 from gevent import pywsgi
 from scheduler.thread_manager import MyThread
 from utils import config_util, util

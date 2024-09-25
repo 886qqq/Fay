@@ -10,24 +10,25 @@ import pygame
 import numpy as np
 import fay_booter
 from ai_module import baidu_emotion
-from core import wsa_server, tts_voice
+from core import wsa_server
 from core.interact import Interact
-from core.tts_voice import EnumVoice
+from tts.tts_voice import EnumVoice
 from scheduler.thread_manager import MyThread
+from tts import tts_voice
 from utils import util, config_util
 from core import qa_service
 from utils import config_util as cfg
 from core import content_db
 from ai_module import nlp_cemotion
-from ai_module import nlp_rasa
-from ai_module import nlp_gpt
+from llm import nlp_rasa
+from llm import nlp_gpt
 from ai_module import yolov8
-from ai_module import nlp_VisualGLM
-from ai_module import nlp_lingju
-from ai_module import nlp_xingchen
-from ai_module import nlp_langchain
-from ai_module import nlp_ollama_api
-from ai_module import nlp_coze
+from llm import nlp_VisualGLM
+from llm import nlp_lingju
+from llm import nlp_xingchen
+from llm import nlp_langchain
+from llm import nlp_ollama_api
+from llm import nlp_coze
 from core import member_db
 import threading
 import functools
@@ -43,15 +44,15 @@ def synchronized(func):
 #加载配置
 cfg.load_config()
 if cfg.tts_module =='ali':
-    from ai_module.ali_tss import Speech
+    from tts.ali_tss import Speech
 elif cfg.tts_module == 'gptsovits':
-    from ai_module.gptsovits import Speech
+    from tts.gptsovits import Speech
 elif cfg.tts_module == 'gptsovits_v3':
-    from ai_module.gptsovits_v3 import Speech    
+    from tts.gptsovits_v3 import Speech    
 elif cfg.tts_module == 'volcano':
-    from ai_module.volcano_tts import Speech
+    from tts.volcano_tts import Speech
 else:
-    from ai_module.ms_tts_sdk import Speech
+    from tts.ms_tts_sdk import Speech
 
 #windows运行推送唇形数据
 import platform
@@ -77,7 +78,7 @@ def handle_chat_message(msg, username='User'):
     text = ''
     textlist = []
     try:
-        util.log(1, '自然语言处理...')
+        util.printInfo(1, username, '自然语言处理...')
         tm = time.time()
         cfg.load_config()
         module_name = "nlp_" + cfg.key_chat_module
@@ -90,13 +91,13 @@ def handle_chat_message(msg, username='User'):
         else:
             uid = member_db.new_instance().find_user(username)
             text = selected_module.question(msg, uid)  
-        util.log(1, '自然语言处理完成. 耗时: {} ms'.format(math.floor((time.time() - tm) * 1000)))
+        util.printInfo(1, username, '自然语言处理完成. 耗时: {} ms'.format(math.floor((time.time() - tm) * 1000)))
         if text == '哎呀，你这么说我也不懂，详细点呗' or text == '':
-            util.log(1, '[!] 自然语言无语了！')
+            util.printInfo(1, username, '[!] 自然语言无语了！')
             text = '哎呀，你这么说我也不懂，详细点呗'  
     except BaseException as e:
         print(e)
-        util.log(1, '自然语言处理错误！')
+        util.printInfo(1, username, '自然语言处理错误！')
         text = '哎呀，你这么说我也不懂，详细点呗'   
 
     return text,textlist
@@ -133,9 +134,9 @@ class FeiFei:
             return answer
         
         # 人设问答
-        keyword = qa_service.question('Persona',text)
-        if keyword is not None:
-            return config_util.config["attribute"][keyword]
+        # keyword = qa_service.question('Persona',text)
+        # if keyword is not None:
+        #     return config_util.config["attribute"][keyword]
        
     #语音消息处理
     def __process_interact(self, interact: Interact):
@@ -202,7 +203,7 @@ class FeiFei:
                             i+= 1
 
                 #同步回复到数字人            
-                wsa_server.get_web_instance().add_cmd({"panelMsg": text, "Username" : username})
+                # wsa_server.get_web_instance().add_cmd({"panelMsg": text, "Username" : username})
                 if wsa_server.get_instance().isConnect:
                     content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': text}, "Username" : username}
                     wsa_server.get_instance().add_cmd(content)
@@ -308,20 +309,20 @@ class FeiFei:
     def say(self, interact, text):
         try:
             if len(text) >= 1:
-                util.printInfo(1, '菲菲', '({}) {}'.format(self.__get_mood_voice(), text))
+                util.printInfo(3, interact.data.get('user'), '({}) {}'.format(self.__get_mood_voice(), text))
                 if wsa_server.get_instance().isConnect:
                     content = {'Topic': 'Unreal', 'Data': {'Key': 'text', 'Value': text}, 'Username' : interact.data.get('user')}
                     wsa_server.get_instance().add_cmd(content)
                 if config_util.config["source"]["tts_enabled"]:#TODO 处理tts开关
-                    util.log(1, '合成音频...')
+                    util.printInfo(1,  interact.data.get('user'), '合成音频...')
                     tm = time.time()
                     result = self.sp.to_sample(text, self.__get_mood_voice())
-                    util.log(1, '合成音频完成. 耗时: {} ms 文件:{}'.format(math.floor((time.time() - tm) * 1000), result))
+                    util.printInfo(1,  interact.data.get('user'), '合成音频完成. 耗时: {} ms 文件:{}'.format(math.floor((time.time() - tm) * 1000), result))
                     if result is not None:            
                         MyThread(target=self.__process_output_audio, args=[result, interact, text]).start()
                         return result
                 else:
-                    util.log(1, '问答处理总时长：{} ms'.format(math.floor((time.time() - self.last_quest_time) * 1000)))
+                    util.printInfo(1,  interact.data.get('user'), '问答处理总时长：{} ms'.format(math.floor((time.time() - self.last_quest_time) * 1000)))
                     time.sleep(1)
                     wsa_server.get_web_instance().add_cmd({"panelMsg": "", 'Username' : interact.data.get('user')})
                     if wsa_server.get_instance().isConnect: 
@@ -336,8 +337,8 @@ class FeiFei:
     @synchronized
     def __play_sound(self, file_url, audio_length, interact):
         self.speaking = True
-        util.log(1, '播放音频...')
-        util.log(1, '问答处理总时长：{} ms'.format(math.floor((time.time() - self.last_quest_time) * 1000)))
+        util.printInfo(1,  interact.data.get('user'), '播放音频...')
+        util.printInfo(1,  interact.data.get('user'), '问答处理总时长：{} ms'.format(math.floor((time.time() - self.last_quest_time) * 1000)))
         pygame.mixer.music.load(file_url)
         pygame.mixer.music.play()
 
@@ -368,9 +369,9 @@ class FeiFei:
                         data = wavfile.read(102400)
                         time.sleep(0.0001)
                     value.deviceConnector.send(b'\x08\x07\x06\x05\x04\x03\x02\x01\x00')# 发送音频结束标志
-                    util.log(1, "远程音频发送完成：{}".format(total))
+                    util.printInfo(1, value.usernmae, "远程音频发送完成：{}".format(total))
                 except socket.error as serr:
-                    util.log(1,"远程音频输入输出设备已经断开：{}".format(key)) 
+                    util.printInfo(1, value.usernmae, "远程音频输入输出设备已经断开：{}".format(key)) 
                     value.stop()
                     delkey = key
         if delkey:            
@@ -395,7 +396,7 @@ class FeiFei:
 
             #发送音频给数字人接口
             if wsa_server.get_instance().isConnect: 
-                content = {'Topic': 'Unreal', 'Data': {'Key': 'audio', 'Value': 'http://127.0.0.1:5000/audio/' + os.path.basename(file_url), 'Text': text, 'Time': audio_length, 'Type': 'interact'}, 'Username' : interact.data.get('user')}
+                content = {'Topic': 'Unreal', 'Data': {'Key': 'audio', 'Value': os.path.abspath(file_url), 'HttpValue': 'http://127.0.0.1:5000/audio/' + os.path.basename(file_url), 'Text': text, 'Time': audio_length, 'Type': 'interact'}, 'Username' : interact.data.get('user')}
                 #计算lips
                 if platform.system() == "Windows":
                     try:
@@ -405,15 +406,16 @@ class FeiFei:
                         content["Data"]["Lips"] = consolidated_visemes
                     except Exception as e:
                         print(e)
-                        util.log(1, "唇型数据生成失败")
+                        util.printInfo(1, interact.data.get("user"),  "唇型数据生成失败")
                 wsa_server.get_instance().add_cmd(content)
+                util.printInfo(1, interact.data.get("user"),  "数字人接口发送音频数据成功")
 
             wsa_server.get_web_instance().add_cmd({"panelMsg": "", 'Username' : interact.data.get('user')})
             if wsa_server.get_instance().isConnect: 
                 content = {'Topic': 'Unreal', 'Data': {'Key': 'log', 'Value': ""}, 'Username' : interact.data.get('user')}
                 wsa_server.get_instance().add_cmd(content)
             if config_util.config["interact"]["playSound"]:
-                util.log(1, '结束播放！')
+                util.printInfo(1, interact.data.get('user'), '结束播放！')
         except Exception as e:
             print(e)
 

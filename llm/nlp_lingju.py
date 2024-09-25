@@ -9,7 +9,7 @@ from core.authorize_tb import Authorize_Tb
 
 def question(cont, uid=0):
     lingju = Lingju()
-    answer = lingju.question(cont)
+    answer = lingju.question(cont, uid)
     return answer
 
 class Lingju:
@@ -18,7 +18,8 @@ class Lingju:
         self.userid = cfg.key_lingju_api_authcode
         self.authorize_tb = Authorize_Tb()
 
-    def question(self, cont):
+    def question(self, cont, uid):
+        self.userid = uid
         token = self.__check_token()
         if token is None or token == 'expired':
             token_info = self.__get_token()

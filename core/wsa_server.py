@@ -26,6 +26,7 @@ class MyServer:
 
     # 接收处理
     async def __consumer_handler(self, websocket, path):
+        username = None
         try:
             async for message in websocket:
                 await asyncio.sleep(0.01)
@@ -38,7 +39,7 @@ class MyServer:
                             self.__clients[i]["username"] = username
                 await self.__consumer(message)
         except websockets.exceptions.ConnectionClosedError as e:
-            util.log(1, f"WebSocket 连接关闭: {e}")
+            util.printInfo(1, "User" if username is None else username, f"WebSocket 连接关闭: {e}")
             if len(self.__clients) == 0:
                 self.isConnect = False
             remote_address = websocket.remote_address
@@ -49,6 +50,8 @@ class MyServer:
             self.on_close_handler()
             
     async def __producer_handler(self, websocket, path):
+        message = None
+        username = None
         try:
             while self.__running:
                 await asyncio.sleep(0.01)
@@ -68,7 +71,7 @@ class MyServer:
                                    await c["websocket"].send(message)
                             
         except Exception as e:
-            util.log(1, f"WebSocket 连接关闭: {e}")
+            util.printInfo(1, "User" if  username is None else username, f"WebSocket 连接关闭: {e}")
             if len(self.__clients) == 0:
                 self.isConnect = False
             remote_address = websocket.remote_address

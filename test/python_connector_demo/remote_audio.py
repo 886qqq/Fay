@@ -5,7 +5,7 @@ import pygame
 
 import thread_manager
 import wave
-
+is_speaking = False
 def get_stream():
         paudio = pyaudio.PyAudio()
         device_id = 0
@@ -15,14 +15,20 @@ def get_stream():
         return stream
 
 def send_audio(client):
+    global is_speaking
     stream = get_stream()
     while stream:
+        time.sleep(0.0001)
+        if is_speaking:
+            continue
         data = stream.read(1024, exception_on_overflow=False)
         client.send(data)
         time.sleep(0.005)
         print(".", end="")
+        
 
 def receive_audio(client):
+    global is_speaking
     while True:
         data = client.recv(9)
         filedata = b''
@@ -39,18 +45,22 @@ def receive_audio(client):
             filename = "samples/recv_{}.wav".format(time.time())
             with open(filename, 'wb') as wf:
                 wf.write(filedata)
-
+            with wave.open(filename, 'rb') as wav_file:
+                audio_length = wav_file.getnframes() / float(wav_file.getframerate())
+            is_speaking = True
             pygame.mixer.music.load(filename)
             pygame.mixer.music.play()
+            time.sleep(audio_length)
+            is_speaking = False
 
             
 
 
 if __name__ == "__main__":
     client = socket.socket()
-    client.connect(("127.0.0.1", 10001))
-    client.send(b"<username>xszyou</username>")
-    # client.send(b"<output>False<output>")
+    client.connect(("192.168.1.101", 10001))
+    client.send(b"<username>xszyou</username>")#指定用户名
+    # client.send(b"<output>False<output>")#不回传音频（可以通过websocket 10003数字人接口接收音频http路径和本地路径）
     time.sleep(1)
     pygame.mixer.init()
     thread_manager.MyThread(target=send_audio, args=(client,)).start()
