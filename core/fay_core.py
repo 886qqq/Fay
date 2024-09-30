@@ -106,7 +106,6 @@ def handle_chat_message(msg, username='User'):
 class FeiFei:
     def __init__(self):
         self.lock = threading.Lock()
-        pygame.mixer.init()
         self.q_msg = '你叫什么名字？'
         self.a_msg = 'hi,我叫菲菲，英文名是fay'
         self.mood = 0.0  # 情绪值
@@ -339,6 +338,7 @@ class FeiFei:
         self.speaking = True
         util.printInfo(1,  interact.data.get('user'), '播放音频...')
         util.printInfo(1,  interact.data.get('user'), '问答处理总时长：{} ms'.format(math.floor((time.time() - self.last_quest_time) * 1000)))
+        pygame.mixer.init()
         pygame.mixer.music.load(file_url)
         pygame.mixer.music.play()
 
@@ -369,9 +369,9 @@ class FeiFei:
                         data = wavfile.read(102400)
                         time.sleep(0.0001)
                     value.deviceConnector.send(b'\x08\x07\x06\x05\x04\x03\x02\x01\x00')# 发送音频结束标志
-                    util.printInfo(1, value.usernmae, "远程音频发送完成：{}".format(total))
+                    util.printInfo(1, value.username, "远程音频发送完成：{}".format(total))
                 except socket.error as serr:
-                    util.printInfo(1, value.usernmae, "远程音频输入输出设备已经断开：{}".format(key)) 
+                    util.printInfo(1, value.username, "远程音频输入输出设备已经断开：{}".format(key)) 
                     value.stop()
                     delkey = key
         if delkey:            
