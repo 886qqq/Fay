@@ -18,7 +18,7 @@ import wave
 _ATTACK = 0.2
 
 # 释放时间 (秒)
-_RELEASE = 0.75
+_RELEASE = 0.2
 
 
 class Recorder:
@@ -158,7 +158,7 @@ class Recorder:
 
     def __record(self):   
         try:
-            stream = self.get_stream() #此方法会阻塞
+            stream = self.get_stream() #通过此方法的阻塞来让程序往下执行
         except Exception as e:
                 print(e)
                 util.printInfo(1, self.username, "请检查设备是否有误，再重新启动!")
@@ -239,7 +239,7 @@ class Recorder:
             else:#结束拾音
                 last_mute_time = time.time()
                 if isSpeaking:
-                    if time.time() - last_speaking_time > _RELEASE:
+                    if time.time() - last_speaking_time > _RELEASE: #TODO 更换的vad更靠谱
                         isSpeaking = False
                         util.printInfo(1, self.username, "语音处理中...")
                         self.__aLiNls.end()

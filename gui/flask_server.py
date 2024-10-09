@@ -3,6 +3,7 @@ import json
 import time
 import os
 import pyaudio
+import re
 from flask import Flask, render_template, request, jsonify, Response, send_file
 from flask_cors import CORS
 
@@ -325,8 +326,10 @@ def non_streaming_response(last_content, text):
     })
 
 def text_chunks(text, chunk_size=20):
-    for i in range(0, len(text), chunk_size):
-        yield text[i:i + chunk_size]
+    pattern = r'([^.!?;:，。！？]+[.!?;:，。！？]?)'
+    chunks = re.findall(pattern, text)
+    for chunk in chunks:
+        yield chunk
 
 @__app.route('/', methods=['get'])
 @auth.login_required

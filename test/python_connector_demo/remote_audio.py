@@ -3,7 +3,7 @@ import pyaudio
 import time
 import pygame
 
-import thread_manager
+from threading import Thread
 import wave
 is_speaking = False
 def get_stream():
@@ -58,13 +58,13 @@ def receive_audio(client):
 
 if __name__ == "__main__":
     client = socket.socket()
-    client.connect(("192.168.1.101", 10001))
-    client.send(b"<username>xszyou</username>")#指定用户名
+    client.connect(("127.0.0.1", 10001))
+    # client.send(b"<username>User</username>")#指定用户名
     # client.send(b"<output>False<output>")#不回传音频（可以通过websocket 10003数字人接口接收音频http路径和本地路径）
     time.sleep(1)
     pygame.mixer.init()
-    thread_manager.MyThread(target=send_audio, args=(client,)).start()
-    thread_manager.MyThread(target=receive_audio, args=(client,)).start()
+    Thread(target=send_audio, args=(client,)).start()
+    Thread(target=receive_audio, args=(client,)).start()
 
 
 

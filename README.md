@@ -66,16 +66,17 @@ docker run -it --rm -p 5000:5000 -p 10001:10001 -p 10002:10002 -p 10003:10003 fa
 
 ue: https://github.com/xszyou/fay-ue5
 
-xuniren（2d）：https://qqk9ntwbcit.feishu.cn/wiki/BYn0w7OTKikGGqkRXoLche6Rnob
-
 unity：https://qqk9ntwbcit.feishu.cn/wiki/Se9xw04hUiss00kb2Lmci1BVnM9
 
-metahuman-stream：https://qqk9ntwbcit.feishu.cn/wiki/Ik1kwO9X5iilnGkFwRhcnmtvn3e
+metahuman-stream（2d）：https://qqk9ntwbcit.feishu.cn/wiki/Ik1kwO9X5iilnGkFwRhcnmtvn3e
 
-duix（android、ios)：https://qqk9ntwbcit.feishu.cn/wiki/Ik1kwO9X5iilnGkFwRhcnmtvn3e
+duix（android)：https://qqk9ntwbcit.feishu.cn/wiki/Ik1kwO9X5iilnGkFwRhcnmtvn3e
 
 ### **启动android 连接器（非必须）**
 代码地址：https://github.com/xszyou/fay-android
+
+### **集成到自家产品（非必须）**
+接口：https://qqk9ntwbcit.feishu.cn/wiki/Mcw3wbA3RiNZzwkexz6cnKCsnhh
 
 
 

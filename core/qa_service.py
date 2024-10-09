@@ -1,20 +1,12 @@
-
-from openpyxl import load_workbook
+import os
+import csv
 import difflib
 from utils import config_util as cfg
 from scheduler.thread_manager import MyThread
 import shlex
 import subprocess
 import time
-
-def question(query_type,text):
-    qa = QAService()
-    answer = qa.question(query_type,text)
-    return answer
-
-def run_script(command):
-    args = shlex.split(command)  # 分割命令行参数
-    subprocess.Popen(args)
+from utils import util
 
 class QAService:
     
@@ -54,21 +46,36 @@ class QAService:
             answer, action  = self.__get_keyword(self.command_keyword, text, query_type)
         return answer
 
-    def __run(self,action):
-        time.sleep(2)
-        run_script(action)   
+    def __run(self, action):
+        time.sleep(0.1)
+        args = shlex.split(action)  # 分割命令行参数
+        subprocess.Popen(args)
 
     def __read_qna(self, filename):
         qna = []
         try:
-            wb = load_workbook(filename)
-            sheet = wb.active
-            for row in sheet.iter_rows(min_row=2, values_only=True):
-                if len(row) >= 2:
-                    qna.append([row[0].split(";"), row[1], row[2] if len(row) >= 3 else None])
-        except BaseException as e:
-            print(f"无法读取Q&A文件 {filename} -> {e}")
+            with open(filename, 'r', encoding='utf-8') as csvfile:
+                reader = csv.reader(csvfile)
+                next(reader)  # 跳过表头
+                for row in reader:
+                    if len(row) >= 2:
+                        qna.append([row[0].split(";"), row[1], row[2] if len(row) >= 3 else None])
+        except Exception as e:
+            util.log(1, 'qa文件没有指定，不匹配qa')
         return qna
+
+    def record_qapair(self, question, answer):
+        if not cfg.config['interact']['QnA'] or cfg.config['interact']['QnA'][-3:] != 'csv':
+            util.log(1, 'qa文件没有指定，不记录大模型回复')
+            return
+        log_file = cfg.config['interact']['QnA']  # 指定 CSV 文件的名称或路径
+        file_exists = os.path.isfile(log_file)
+        with open(log_file, 'a', newline='', encoding='utf-8') as csvfile:
+            writer = csv.writer(csvfile)
+            if not file_exists:
+                # 写入表头
+                writer.writerow(['Question', 'Answer'])
+            writer.writerow([question, answer])
 
     def __get_keyword(self, keyword_dict, text, query_type):
         last_similar = 0

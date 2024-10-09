@@ -66,7 +66,7 @@ class FunASR:
     def __attempt_reconnect(self):
         if not self.__reconnecting:
             self.__reconnecting = True
-            util.log(3, "尝试重连funasr...")
+            util.log(1, "尝试重连funasr...")
             while not self.__connected:
                 time.sleep(self.__reconnect_delay)
                 self.start()

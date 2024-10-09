@@ -1,5 +1,5 @@
 import time
-
+import asyncio
 import azure.cognitiveservices.speech as speechsdk
 import asyncio
 from tts import tts_voice
@@ -9,6 +9,7 @@ from utils import config_util as cfg
 import pygame
 import edge_tts
 from pydub import AudioSegment
+from scheduler.thread_manager import MyThread
 
 class Speech:
     def __init__(self):
@@ -77,13 +78,12 @@ class Speech:
                    '</mstts:express-as>' \
                    '</voice>' \
                    '</speak>'.format(voice_name, style, 1.8, "<break time='0.2s'/>" + text)
-            result = self.__synthesizer.speak_ssml(ssml)
+            result = self.__synthesizer.speak_text_async(text).get()
+            # result = self.__synthesizer.speak_ssml(ssml)#感觉使用sepak_text_async要快很多
             audio_data_stream = speechsdk.AudioDataStream(result)
-
             file_url = './samples/sample-' + str(int(time.time() * 1000)) + '.wav'
             audio_data_stream.save_to_wav_file(file_url)
             if result.reason == speechsdk.ResultReason.SynthesizingAudioCompleted:
-                # wav_url = self.convert_mp3_to_wav(file_url)
                 wav_url = file_url
                 self.__history_data.append((voice_name, style, text, wav_url))
                 return wav_url

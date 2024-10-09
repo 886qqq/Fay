@@ -14,7 +14,6 @@ Key_ms_tts_region = None
 baidu_emotion_app_id = None
 baidu_emotion_api_key = None
 baidu_emotion_secret_key = None
-key_ngrok_cc_id = None
 key_gpt_api_key = None
 key_chat_module = None
 gpt_model_engine = None
@@ -51,7 +50,6 @@ def load_config():
     global baidu_emotion_app_id
     global baidu_emotion_secret_key
     global baidu_emotion_api_key
-    global key_ngrok_cc_id
     global key_gpt_api_key
     global gpt_model_engine
     global key_chat_module
@@ -92,7 +90,6 @@ def load_config():
     baidu_emotion_app_id = system_config.get('key', 'baidu_emotion_app_id')
     baidu_emotion_api_key = system_config.get('key', 'baidu_emotion_api_key')
     baidu_emotion_secret_key = system_config.get('key', 'baidu_emotion_secret_key')
-    key_ngrok_cc_id = system_config.get('key', 'ngrok_cc_id')
     key_gpt_api_key = system_config.get('key', 'gpt_api_key')
     gpt_model_engine = system_config.get('key', 'gpt_model_engine')
     key_chat_module = system_config.get('key', 'chat_module')

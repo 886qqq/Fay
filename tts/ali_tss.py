@@ -101,6 +101,7 @@ class Speech:
                 conn.request(method='POST', url=url, body=body, headers=httpHeaders)
                 # 处理服务端返回的响应。
                 response = conn.getresponse()
+                tt = time.time()
                 contentType = response.getheader('Content-Type')
                 body = response.read()
                 if 'audio/mpeg' == contentType :
@@ -110,12 +111,14 @@ class Speech:
                         wf.setsampwidth(2)
                         wf.setframerate(16000)
                         wf.writeframes(body)
+                
                 else :
                     util.log(1, "[x] 语音转换失败！")
                     util.log(1, "[x] 原因: " + str(body))
                     file_url = None
                     return file_url
-                conn.close()   
+                conn.close()
+                print(time.time() - tt)   
                 return file_url
             else:
                 util.log(1, "[x] 语音转换失败！")
