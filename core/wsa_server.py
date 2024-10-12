@@ -3,14 +3,20 @@ from asyncio import AbstractEventLoop
 import websockets
 import asyncio
 import json
+import threading
 from abc import abstractmethod
 from websockets.legacy.server import Serve
 
 from scheduler.thread_manager import MyThread
 from utils import util
-
+class LL:
+    def acquire(self):
+        pass
+    def release(self):
+        pass
 class MyServer:
     def __init__(self, host='0.0.0.0', port=10000):
+        self.lock = LL()#threading.Lock()
         self.__host = host  # ip
         self.__port = port  # 端口号
         self.__listCmd = []  # 要发送的信息的列表
@@ -34,19 +40,29 @@ class MyServer:
                 if username:
                     remote_address = websocket.remote_address
                     unique_id = f"{remote_address[0]}:{remote_address[1]}"
-                    for i in range(len(self.__clients)):
+                    self.lock.acquire()
+                    for i in range(len(self.__clients)): 
                         if self.__clients[i]["id"] == unique_id:
                             self.__clients[i]["username"] = username
+                    self.lock.release()
                 await self.__consumer(message)
         except websockets.exceptions.ConnectionClosedError as e:
             util.printInfo(1, "User" if username is None else username, f"WebSocket 连接关闭: {e}")
+            self.lock.acquire()
             if len(self.__clients) == 0:
                 self.isConnect = False
+            self.lock.release()
             remote_address = websocket.remote_address
             unique_id = f"{remote_address[0]}:{remote_address[1]}"
+            self.lock.acquire()
+            delid = None
             for i in range(len(self.__clients)):
                 if self.__clients[i]["id"] == unique_id:
-                    del self.__clients[i]
+                    delid = i
+                    break
+            if delid is not None:
+                del self.__clients[delid]
+            self.lock.release()
             self.on_close_handler()
             
     async def __producer_handler(self, websocket, path):
@@ -61,24 +77,36 @@ class MyServer:
                         username = json.loads(message).get("Username")
                         if username is None: #cmd没有指定username就群发
                             wsclients = list()
+                            self.lock.acquire()
                             for c in self.__clients:
                                 wsclients.append(c["websocket"])
+                            self.lock.release()
                             tasks = [asyncio.create_task(client.send(message)) for client in wsclients]
                             await asyncio.wait(tasks)
+                            self.lock.release()
                         else:#指定用户发送
+                            self.lock.acquire()
                             for c in self.__clients:
                                 if c.get("username") == username:
                                    await c["websocket"].send(message)
-                            
+                            self.lock.release()
         except Exception as e:
             util.printInfo(1, "User" if  username is None else username, f"WebSocket 连接关闭: {e}")
+            self.lock.acquire()
             if len(self.__clients) == 0:
                 self.isConnect = False
+            self.lock.release()
             remote_address = websocket.remote_address
             unique_id = f"{remote_address[0]}:{remote_address[1]}"
+            self.lock.acquire()
+            delid = None
             for i in range(len(self.__clients)):
                 if self.__clients[i]["id"] == unique_id:
-                    del self.__clients[i]
+                    delid  = i
+                    break
+            if delid:
+                del self.__clients[delid]        
+            self.lock.release()
             self.on_close_handler()
 
     
@@ -88,17 +116,23 @@ class MyServer:
         self.on_connect_handler()
         remote_address = websocket.remote_address
         unique_id = f"{remote_address[0]}:{remote_address[1]}"
+        self.lock.acquire()
         self.__clients.append({"id" : unique_id, "websocket" : websocket, "username" : "User"})
-        
+        self.lock.release()
         consumer_task = asyncio.ensure_future(self.__consumer_handler(websocket, path)) # 接收
         producer_task = asyncio.ensure_future(self.__producer_handler(websocket, path)) # 发送
         done, self.__pending = await asyncio.wait([consumer_task, producer_task], return_when=asyncio.FIRST_COMPLETED)
         for task in self.__pending:
             task.cancel()
+        self.lock.acquire()
+        delid = None
         for i in range(len(self.__clients)):
             if self.__clients[i]["id"] == unique_id:
-                del self.__clients[i]
-
+                delid = i
+                break
+        if delid:
+            del self.__clients[delid]
+        self.lock.release()
         if len(self.__clients) == 0:
                 self.isConnect = False
         util.log(1, "websocket连接断开:{}".format(unique_id))
