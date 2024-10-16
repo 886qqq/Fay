@@ -69,7 +69,7 @@
                                             <el-input v-model="attribute_contact" placeholder="请输入内容" :disabled="!configEditable"></el-input>
                                         </li>
                                         <li>
-                                            <p>喜好：</p>
+                                            <p>补充：</p>
                                             <el-input v-model="attribute_hobby" placeholder="请输入内容" :disabled="!configEditable"></el-input>
                                         </li>
                                     </ul>
@@ -96,11 +96,6 @@
                                             <el-slider v-model="interact_perception_follow" :disabled="!configEditable"></el-slider>
                                         </li>
                                        
-                                        <br>
-                                        <li >
-                                             <el-button style="margin-left: 55px;width: 135px;"  type="success"  class="btn_open"
-                                             @click=postControlEyes()><i class="fas fa-eye"></i> Fay Eyes</el-button>
-                                        </li>
                                         <br>
                                         <li>
                                             <p>唤醒模式：</p>
@@ -135,6 +130,12 @@
                                                 inactive-color="#ff4949" :disabled="!configEditable" >
                                             </el-switch>
                                         </li>
+                                        <li>
+                                            <p>麦克风播放：</p>
+                                            <el-switch v-model="source_record_enabled" active-color="#13ce66"
+                                                inactive-color="#ff4949" :disabled="!configEditable" >
+                                            </el-switch>
+                                        </li>
                                     </ul>
                                 </div>
                             </div>
@@ -147,15 +148,11 @@
                             <ul>
                                 
                                 <li class="url">
-                                    <el-switch v-model="source_record_enabled" active-color="#13ce66"
+                                    <el-switch v-model="automatic_player_status" active-color="#13ce66"
                                         inactive-color="#ff4949" :disabled="!configEditable">
                                     </el-switch>
-                                    <p>麦克风</p>
-                                    <el-select v-model="source_record_device" placeholder="请选择" :disabled="!configEditable">
-                                        <el-option v-for="item in device_list" :key="item.value" :label="item.label"
-                                            :value="item.value">
-                                        </el-option>
-                                    </el-select>
+                                    <p>自动播放器</p>
+                                    <el-input v-model="automatic_player_url" placeholder="http://127.0.0.1:6000" :disabled="!configEditable"></el-input>
                                 </li>
                                 <li class="url">
 

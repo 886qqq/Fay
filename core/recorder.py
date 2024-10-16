@@ -174,22 +174,10 @@ class Recorder:
             except Exception as e:
                 data = None
                 print(e)
-                util.log(1, "请检查设备是否有误，再重新启动!")
-                return
+                util.log(1, "请检查录音设备是否有误，再重新启动!")
+                self.__running = False
             if not data:
-                continue
-            
-
-            if  cfg.config['source']['record']['enabled'] and not self.is_remote():
-                if len(cfg.config['source']['record'])<3:
-                    channels = 1
-                else:
-                    channels = int(cfg.config['source']['record']['channels'])
-                #只获取第一声道
-                data = np.frombuffer(data, dtype=np.int16)
-                data = np.reshape(data, (-1, channels))  # reshaping the array to split the channels
-                mono = data[:, 0]  # taking the first channel
-                data = mono.tobytes()  
+                continue 
 
             #计算音量是否满足激活拾音
             level = audioop.rms(data, 2)

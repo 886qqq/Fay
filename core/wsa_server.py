@@ -3,20 +3,15 @@ from asyncio import AbstractEventLoop
 import websockets
 import asyncio
 import json
-import threading
 from abc import abstractmethod
 from websockets.legacy.server import Serve
 
-from scheduler.thread_manager import MyThread
 from utils import util
-class LL:
-    def acquire(self):
-        pass
-    def release(self):
-        pass
+from scheduler.thread_manager import MyThread
+
 class MyServer:
     def __init__(self, host='0.0.0.0', port=10000):
-        self.lock = LL()#threading.Lock()
+        self.lock = asyncio.Lock()
         self.__host = host  # ip
         self.__port = port  # 端口号
         self.__listCmd = []  # 要发送的信息的列表
@@ -26,9 +21,6 @@ class MyServer:
         self.__running = True
         self.__pending = None
         self.isConnect = False
-
-    def __del__(self):
-        self.stop_server()
 
     # 接收处理
     async def __consumer_handler(self, websocket, path):
@@ -40,103 +32,68 @@ class MyServer:
                 if username:
                     remote_address = websocket.remote_address
                     unique_id = f"{remote_address[0]}:{remote_address[1]}"
-                    self.lock.acquire()
-                    for i in range(len(self.__clients)): 
-                        if self.__clients[i]["id"] == unique_id:
-                            self.__clients[i]["username"] = username
-                    self.lock.release()
+                    async with self.lock:
+                        for i in range(len(self.__clients)): 
+                            if self.__clients[i]["id"] == unique_id:
+                                self.__clients[i]["username"] = username
                 await self.__consumer(message)
         except websockets.exceptions.ConnectionClosedError as e:
-            util.printInfo(1, "User" if username is None else username, f"WebSocket 连接关闭: {e}")
-            self.lock.acquire()
-            if len(self.__clients) == 0:
-                self.isConnect = False
-            self.lock.release()
-            remote_address = websocket.remote_address
-            unique_id = f"{remote_address[0]}:{remote_address[1]}"
-            self.lock.acquire()
-            delid = None
-            for i in range(len(self.__clients)):
-                if self.__clients[i]["id"] == unique_id:
-                    delid = i
-                    break
-            if delid is not None:
-                del self.__clients[delid]
-            self.lock.release()
-            self.on_close_handler()
-            
-    async def __producer_handler(self, websocket, path):
-        message = None
-        username = None
-        try:
-            while self.__running:
-                await asyncio.sleep(0.01)
-                if len(self.__listCmd) > 0:
-                    message = await self.__producer()
-                    if message:
-                        username = json.loads(message).get("Username")
-                        if username is None: #cmd没有指定username就群发
-                            wsclients = list()
-                            self.lock.acquire()
-                            for c in self.__clients:
-                                wsclients.append(c["websocket"])
-                            self.lock.release()
-                            tasks = [asyncio.create_task(client.send(message)) for client in wsclients]
-                            await asyncio.wait(tasks)
-                            self.lock.release()
-                        else:#指定用户发送
-                            self.lock.acquire()
-                            for c in self.__clients:
-                                if c.get("username") == username:
-                                   await c["websocket"].send(message)
-                            self.lock.release()
-        except Exception as e:
+            # 从客户端列表中移除已断开的连接
+            await self.remove_client(websocket)
             util.printInfo(1, "User" if  username is None else username, f"WebSocket 连接关闭: {e}")
-            self.lock.acquire()
-            if len(self.__clients) == 0:
-                self.isConnect = False
-            self.lock.release()
-            remote_address = websocket.remote_address
-            unique_id = f"{remote_address[0]}:{remote_address[1]}"
-            self.lock.acquire()
-            delid = None
-            for i in range(len(self.__clients)):
-                if self.__clients[i]["id"] == unique_id:
-                    delid  = i
-                    break
-            if delid:
-                del self.__clients[delid]        
-            self.lock.release()
-            self.on_close_handler()
 
-    
+    #发送处理        
+    async def __producer_handler(self, websocket, path):
+        while self.__running:
+            await asyncio.sleep(0.01)
+            if len(self.__listCmd) > 0:
+                message = await self.__producer()
+                if message:
+                    username = json.loads(message).get("Username")
+                    if username is None:
+                        # 群发消息
+                        async with self.lock:
+                            wsclients = [c["websocket"] for c in self.__clients]
+                        tasks = [self.send_message(client, message, username) for client in wsclients]
+                        await asyncio.gather(*tasks)
+                    else:
+                        # 向指定用户发送消息
+                        async with self.lock:
+                            target_clients = [c["websocket"] for c in self.__clients if c.get("username") == username]
+                        tasks = [self.send_message(client, message, username) for client in target_clients]
+                        await asyncio.gather(*tasks)
+
+    #发送消息
+    async def send_message(self, client, message, username):
+        try:
+            await client.send(message)
+        except websockets.exceptions.ConnectionClosed as e:
+            # 从客户端列表中移除已断开的连接
+            await self.remove_client(client)
+            util.printInfo(1, "User" if  username is None else username, f"WebSocket 连接关闭: {e}")
+                
     async def __handler(self, websocket, path):
         self.isConnect = True
         util.log(1,"websocket连接上:{}".format(self.__port))
         self.on_connect_handler()
         remote_address = websocket.remote_address
         unique_id = f"{remote_address[0]}:{remote_address[1]}"
-        self.lock.acquire()
-        self.__clients.append({"id" : unique_id, "websocket" : websocket, "username" : "User"})
-        self.lock.release()
-        consumer_task = asyncio.ensure_future(self.__consumer_handler(websocket, path)) # 接收
-        producer_task = asyncio.ensure_future(self.__producer_handler(websocket, path)) # 发送
+        async with self.lock:
+            self.__clients.append({"id" : unique_id, "websocket" : websocket, "username" : "User"})
+        consumer_task = asyncio.create_task(self.__consumer_handler(websocket, path))#接收
+        producer_task = asyncio.create_task(self.__producer_handler(websocket, path))#发送
         done, self.__pending = await asyncio.wait([consumer_task, producer_task], return_when=asyncio.FIRST_COMPLETED)
+
         for task in self.__pending:
             task.cancel()
-        self.lock.acquire()
-        delid = None
-        for i in range(len(self.__clients)):
-            if self.__clients[i]["id"] == unique_id:
-                delid = i
-                break
-        if delid:
-            del self.__clients[delid]
-        self.lock.release()
-        if len(self.__clients) == 0:
-                self.isConnect = False
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+            
+        # 从客户端列表中移除已断开的连接
+        await self.remove_client(websocket)
         util.log(1, "websocket连接断开:{}".format(unique_id))
-        self.on_close_handler()
                 
     async def __consumer(self, message):
         self.on_revice_handler(message)
@@ -147,6 +104,14 @@ class MyServer:
             return message
         else:
             return None
+        
+    async def remove_client(self, websocket):
+        async with self.lock:
+            self.__clients = [c for c in self.__clients if c["websocket"] != websocket]
+            if len(self.__clients) == 0:
+                self.isConnect = False
+        self.on_close_handler()
+
 
     #Edit by xszyou on 20230113:通过继承此类来实现服务端的接收后处理逻辑
     @abstractmethod
@@ -198,18 +163,11 @@ class MyServer:
         self.isConnect = False
         if self.__server is None:
             return
-        self.__server.ws_server.close()
+        self.__server.close()
         self.__server = None
-        try:
-            all_tasks = asyncio.all_tasks(self.__event_loop)
-            for task in all_tasks:
-                while not task.cancel():
-                    util.log(1, "无法关闭！")
-            self.__event_loop.stop()
-            self.__event_loop.close()
-            self.__clients = list()
-        except BaseException as e:
-            util.log(1, "Error: {}".format(e))
+        self.__clients = []
+        util.log(1, "WebSocket server stopped.")
+
 
 #ui端server
 class WebServer(MyServer):

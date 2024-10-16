@@ -94,7 +94,9 @@ new Vue({
             to_human: false,
             sendUser:'User',
             othersUser:"",
-            web_wss:undefined
+            web_wss:undefined,
+            automatic_player_status: false,
+            automatic_player_url: "",
         }
     },
     created() {
@@ -290,6 +292,8 @@ new Vue({
                             _this.wake_word_enabled = source["wake_word_enabled"]
                             _this.wake_word = source["wake_word"]
                             _this.wake_word_type = source["wake_word_type"]
+                            _this.automatic_player_status = source["automatic_player_status"]
+                            _this.automatic_player_url = source["automatic_player_url"]
                             _this.tts_enabled = source["tts_enabled"]
                             _this.play_sound_enabled = interact["playSound"]
                             _this.visualization_detection_enabled = interact["visualization"]
@@ -363,7 +367,9 @@ new Vue({
                         "wake_word_enabled": this.wake_word_enabled,
                         "wake_word": this.wake_word,
                         "wake_word_type": this.wake_word_type,
-                        "tts_enabled": this.tts_enabled
+                        "tts_enabled": this.tts_enabled,
+                        "automatic_player_status": this.automatic_player_status,
+                        "automatic_player_url": this.automatic_player_url
                     },
                     "attribute": {
                         "voice": this.attribute_voice,

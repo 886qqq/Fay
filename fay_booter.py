@@ -45,14 +45,8 @@ class RecorderListener(Recorder):
 
     def get_stream(self):
         self.paudio = pyaudio.PyAudio()
-        device_id,devInfo = self.__findInternalRecordingDevice(self.paudio)
-        if device_id < 0:
-            return
-        channels = int(devInfo['maxInputChannels'])
-        if channels == 0:
-            util.log(1, '请检查设备是否有误，再重新启动!')
-            return
-        self.stream = self.paudio.open(input_device_index=device_id, rate=self.__RATE, format=self.__FORMAT, channels=channels, input=True)
+        device_id = 0
+        self.stream = self.paudio.open(input_device_index=device_id, rate=self.__RATE, format=self.__FORMAT, channels=1, input=True)
         self.__running = True
         MyThread(target=self.__pyaudio_clear).start()
         return self.stream
@@ -274,6 +268,7 @@ def stop():
     if recorderListener is not None:
         util.log(1, '正在关闭录音服务...')
         recorderListener.stop()
+        time.sleep(0.1)
     util.log(1, '正在关闭远程音频输入输出服务...')
     if len(DeviceInputListenerDict) > 0:
         for key in list(DeviceInputListenerDict.keys()):

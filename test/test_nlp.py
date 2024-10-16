@@ -46,7 +46,7 @@ def test_gpt(prompt):
                 print(f"\n收到未知格式的数据：{line}")
 
 if __name__ == "__main__":
-    user_input = "你好，今天天气怎么样？"
+    user_input = "今天天气怎么样？"
     print("GPT 的回复:")
     test_gpt(user_input)
     print("\n请求完成")

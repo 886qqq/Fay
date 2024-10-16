@@ -14,10 +14,14 @@ from scheduler.thread_manager import MyThread
 class Speech:
     def __init__(self):
         self.ms_tts = False
+        voice_type = tts_voice.get_voice_of(config_util.config["attribute"]["voice"])
+        voice_name = EnumVoice.XIAO_XIAO.value["voiceName"]
+        if voice_type is not None:
+            voice_name = voice_type.value["voiceName"]
         if config_util.key_ms_tts_key and config_util.key_ms_tts_key is not None and config_util.key_ms_tts_key.strip() != "":
             self.__speech_config = speechsdk.SpeechConfig(subscription=cfg.key_ms_tts_key, region=cfg.key_ms_tts_region)
             self.__speech_config.speech_recognition_language = "zh-CN"
-            self.__speech_config.speech_synthesis_voice_name = "zh-CN-XiaoxiaoNeural"
+            self.__speech_config.speech_synthesis_voice_name = voice_name
             self.__speech_config.set_speech_synthesis_output_format(speechsdk.SpeechSynthesisOutputFormat.Riff16Khz16BitMonoPcm)
             self.__synthesizer = speechsdk.SpeechSynthesizer(speech_config=self.__speech_config, audio_config=None)
             self.ms_tts = True

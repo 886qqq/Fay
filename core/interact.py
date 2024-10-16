@@ -1,4 +1,4 @@
-#inerleaver:mic，text, socket。interact_type:1、语音/文字交互；
+#inerleaver:mic、text、socket、auto_play。interact_type:1、语音/文字交互；2、穿透。
 class Interact:
 
     def __init__(self, interleaver: str, interact_type: int, data: dict):

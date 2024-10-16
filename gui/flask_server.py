@@ -6,6 +6,7 @@ import pyaudio
 import re
 from flask import Flask, render_template, request, jsonify, Response, send_file
 from flask_cors import CORS
+import requests
 
 import fay_booter
 
@@ -347,6 +348,38 @@ def home_post():
 def serve_audio(filename):
     audio_file = os.path.join(os.getcwd(), "samples", filename)
     return send_file(audio_file)
+
+#数字人端请求获取最新的自动播放消息
+@__app.route('/get_auto_play_item', methods=['POST'])
+def get_auto_play_item():
+    if config_util.config['source']['automatic_player_status']:
+        # 获取用户标识
+        data = request.json
+        user = data.get('user', 'User')
+
+        # 请求自动播放服务器
+        post_data = {"user": user}
+        try:
+            response = requests.post(f"{config_util.config['source']['automatic_player_url']}/get_auto_play_item", json=post_data, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                audio_url = data.get('audio')
+                response_text = data.get('text')
+                timestamp = data.get('timestamp')
+                print("[Info] POST request sent successfully.")
+                interact = Interact("auto_play", 2, {'user': user, 'text': response_text, 'audio': audio_url})
+                util.printInfo(1, user, '自动播放：{}，{}'.format(response_text, audio_url), time.time())
+                fay_booter.feiFei.on_interact(interact)
+            else:
+                print(f"[Error] Failed to send POST request. Status code: {response.status_code}")
+                connected_to_auto_play_server = False
+        except requests.exceptions.RequestException as e:
+            print(f"[Error] POST request failed: {e}")
+            connected_to_auto_play_server = False
+
+    return jsonify({"msg": "success"})
+
+        
 
 def run():
     server = pywsgi.WSGIServer(('0.0.0.0',5000), __app)
